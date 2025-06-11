@@ -14,3 +14,23 @@ export async function GET() {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json()
+
+    const nuevoGasto = await prisma.gasto.create({
+      data: {
+        tipo: body.tipo,
+        monto: body.monto,
+        fecha: new Date(body.fecha),
+        descripcion: body.descripcion,
+      },
+    })
+
+    return NextResponse.json(nuevoGasto, { status: 201 })
+  } catch (error) {
+    console.error('Error al registrar gasto:', error)
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
+}

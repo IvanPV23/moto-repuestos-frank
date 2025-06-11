@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { format } from 'date-fns'
 import { Input } from '@/components/ui/input'
 import {Button} from '@/components/ui/button'
+import GastoForm from './gasto-form'
 
 interface Gasto {
     id_gasto: string
@@ -12,6 +13,8 @@ interface Gasto {
     fecha: string
     description?: string
 }
+
+const [mostrarFormulario, setMostrarFormulario] = useState(false)
 
 export default function GastoTable(){
     const[gastos, setGastos] = useState<Gasto[]>([])
@@ -36,6 +39,23 @@ export default function GastoTable(){
             g.fecha.startsWith(filtroFecha)
         )
         : gastos
+
+    {mostrarFormulario ? (
+        <GastoForm
+            onSuccess={() => {
+            setMostrarFormulario(false)
+            fetchGastos()
+            }}
+            onCancel={() => setMostrarFormulario(false)}
+        />
+        ) : (
+        <Button
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => setMostrarFormulario(true)}
+        >
+            + Nuevo Gasto
+        </Button>
+    )}
 
     return (
         <div className="space-y-4">
@@ -88,3 +108,4 @@ export default function GastoTable(){
         </div>
     )
 }
+
