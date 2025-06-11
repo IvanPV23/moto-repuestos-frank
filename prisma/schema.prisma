@@ -1,0 +1,177 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Proveedor {
+  id_proveedor   String               @id @default(uuid())
+  nombre         String
+  telefono       String?
+  ruc            String?
+  direccion      String?
+  repuestos      RepuestoProveedor[]
+  facturas       FacturaProveedor[]
+  lotes          Lote[]
+}
+
+model Cliente {
+  id_cliente           String         @id @default(uuid())
+  nombre               String
+  edad                 Int?
+  tipo_cliente         String
+  es_nuevo             Boolean        @default(true)
+  telefono             String?
+  fecha_ultima_visita  DateTime       @default(now())
+  servicios            Servicio[]
+  transacciones        Transaccion[]
+}
+
+model Servicio {
+  id_servicio      String       @id @default(uuid())
+  id_cliente       String
+  tipo_servicio    String
+  fecha            DateTime     @default(now())
+  tiempo_estimado  Int?
+  precio_cobrado   Decimal?
+  mecanico_asignado String?
+  repuestos_usados String?
+  cliente          Cliente      @relation(fields: [id_cliente], references: [id_cliente])
+  transacciones    Transaccion[]
+}
+
+model Inventario {
+  id_repuesto        String                @id @default(uuid())
+  nombre_repuesto    String
+  categoria          String
+  stock_actual       Int
+  stock_pendiente    Int?                 @default(0)
+  stock_minimo       Int?
+  stock_optimo       Int?
+  precio_compra      Decimal?
+  precio_venta       Decimal?
+  fecha_ultima_compra DateTime?
+  proveedores        RepuestoProveedor[]
+  transacciones      Transaccion[]
+  detalle_facturas   DetalleFactura[]
+  detalle_proformas  DetalleProforma[]
+  lotes              Lote[]
+}
+
+model RepuestoProveedor {
+  id              String     @id @default(uuid())
+  id_repuesto     String
+  id_proveedor    String
+  precio_unitario Decimal?
+  ultima_compra   DateTime?
+  compras_totales Int        @default(0)
+
+  repuesto    Inventario  @relation(fields: [id_repuesto], references: [id_repuesto])
+  proveedor   Proveedor   @relation(fields: [id_proveedor], references: [id_proveedor])
+}
+
+model Transaccion {
+  id_transaccion String   @id @default(uuid())
+  id_cliente     String
+  fecha          DateTime @default(now())
+  tipo           String
+  id_servicio    String?
+  id_repuesto    String?
+  cantidad       Int?
+  monto_total    Decimal?
+  metodo_pago    String
+
+  cliente     Cliente     @relation(fields: [id_cliente], references: [id_cliente])
+  servicio    Servicio?   @relation(fields: [id_servicio], references: [id_servicio])
+  repuesto    Inventario? @relation(fields: [id_repuesto], references: [id_repuesto])
+}
+
+model Gasto {
+  id_gasto    String   @id @default(uuid())
+  tipo        String
+  monto       Decimal
+  fecha       DateTime @default(now())
+  descripcion String?
+}
+
+model Marketing {
+  id_campana        String   @id @default(uuid())
+  canal             String
+  fecha_inicio      DateTime?
+  fecha_fin         DateTime?
+  costo             Decimal?
+  clientes_atraidos Int?
+  descripcion       String?
+}
+
+model FacturaProveedor {
+  id_factura   String   @id @default(uuid())
+  numero_factura String
+  id_proveedor String
+  fecha        DateTime @default(now())
+  monto_total  Decimal?
+  descripcion  String?
+
+  proveedor    Proveedor   @relation(fields: [id_proveedor], references: [id_proveedor])
+  detalles     DetalleFactura[]
+  lotes        Lote[]
+}
+
+model DetalleFactura {
+  id_detalle      String   @id @default(uuid())
+  id_factura      String
+  id_repuesto     String
+  id_lote         String
+  cantidad        Int
+  precio_unitario Decimal
+  subtotal        Decimal   @default(0)
+
+  factura    FacturaProveedor @relation(fields: [id_factura], references: [id_factura])
+  repuesto   Inventario       @relation(fields: [id_repuesto], references: [id_repuesto])
+  lote       Lote             @relation(fields: [id_lote], references: [id_lote])
+}
+
+model Lote {
+  id_lote      String   @id @default(uuid())
+  numero_lote  String
+  id_factura   String
+  id_repuesto  String
+  id_proveedor String
+  cantidad     Int
+  fecha_compra DateTime?
+
+  factura    FacturaProveedor @relation(fields: [id_factura], references: [id_factura])
+  repuesto   Inventario       @relation(fields: [id_repuesto], references: [id_repuesto])
+  proveedor  Proveedor        @relation(fields: [id_proveedor], references: [id_proveedor])
+  detalles   DetalleFactura[]
+}
+
+model Proforma {
+  id_proforma String   @id @default(uuid())
+  fecha       DateTime @default(now())
+  estado      String
+  notas       String?
+  detalles    DetalleProforma[]
+}
+
+model DetalleProforma {
+  id_detalle          String   @id @default(uuid())
+  id_proforma         String
+  id_repuesto         String
+  cantidad_recomendada Int
+  proveedor_sugerido   String?
+
+  proforma  Proforma   @relation(fields: [id_proforma], references: [id_proforma])
+  repuesto  Inventario @relation(fields: [id_repuesto], references: [id_repuesto])
+}
